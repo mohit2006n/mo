@@ -41,17 +41,6 @@ const staticAssets = [
   "./lib/word.js",
 ];
 
-function applyHeaders(response) {
-  const headers = new Headers(response.headers);
-  headers.set("Cross-Origin-Embedder-Policy", "require-corp");
-  headers.set("Cross-Origin-Opener-Policy", "same-origin");
-  return new Response(response.body, {
-    status: response.status,
-    statusText: response.statusText,
-    headers,
-  });
-}
-
 function handleInstall(event) {
   event.waitUntil(
     caches
@@ -127,4 +116,15 @@ if (typeof window === "undefined") {
   self.addEventListener("fetch", handleFetch);
 } else if (navigator.serviceWorker) {
   registerServiceWorker();
+}
+
+function applyHeaders(response) {
+  const headers = new Headers(response.headers);
+  headers.set("Cross-Origin-Embedder-Policy", "require-corp");
+  headers.set("Cross-Origin-Opener-Policy", "same-origin");
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers,
+  });
 }
