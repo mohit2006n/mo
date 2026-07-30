@@ -41,11 +41,11 @@ const staticAssets = [
 ];
 
 function handleInstall(event) {
+  self.skipWaiting();
   event.waitUntil(
     caches
       .open(cacheName)
       .then((cache) => cache.addAll(staticAssets).catch(() => {}))
-      .then(() => self.skipWaiting())
   );
 }
 
@@ -60,13 +60,36 @@ function handleActivate(event) {
   );
 }
 
+function applyHeaders(response) {
+  if (
+    !response ||
+    response.status === 0 ||
+    response.status === 204 ||
+    response.status === 304 ||
+    response.type === "opaque" ||
+    response.type === "opaqueredirect"
+  ) {
+    return response;
+  }
+  const headers = new Headers(response.headers);
+  headers.set("Cross-Origin-Embedder-Policy", "require-corp");
+  headers.set("Cross-Origin-Opener-Policy", "same-origin");
+  headers.set("Cross-Origin-Resource-Policy", "cross-origin");
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers,
+  });
+}
+
 function handleFetch(event) {
   if (event.request.method !== "GET") return;
+  if (event.request.cache === "only-if-cached" && event.request.mode !== "same-origin") return;
 
   event.respondWith(
     fetch(event.request)
       .then((res) => {
-        if (!res.bodyUsed && res.status === 200) {
+        if (!res.bodyUsed && res.status === 200 && res.type === "basic") {
           const copy = res.clone();
           caches.open(cacheName).then((cache) => cache.put(event.request, copy)).catch(() => {});
         }
@@ -77,8 +100,49 @@ function handleFetch(event) {
 }
 
 function registerServiceWorker() {
-  if ("serviceWorker" in navigator) {
+  if (!("serviceWorker" in navigator)) return;
+
+  if (window.crossOriginIsolated) {
+    sessionStorage.removeItem("coiReloaded");
     navigator.serviceWorker.register("./sw.js").catch(() => {});
+    return;
+  }
+
+  const reloadPage = () => {
+    if (!sessionStorage.getItem("coiReloaded")) {
+      sessionStorage.setItem("coiReloaded", "true");
+      window.location.reload();
+    }
+  };
+
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    if (!window.crossOriginIsolated) {
+      reloadPage();
+    }
+  });
+
+  navigator.serviceWorker
+    .register("./sw.js")
+    .then((registration) => {
+      if (registration.active && !navigator.serviceWorker.controller) {
+        reloadPage();
+      }
+
+      registration.addEventListener("updatefound", () => {
+        const worker = registration.installing;
+        if (worker) {
+          worker.addEventListener("statechange", () => {
+            if (worker.state === "activated" && !window.crossOriginIsolated) {
+              reloadPage();
+            }
+          });
+        }
+      });
+    })
+    .catch(() => {});
+
+  if (navigator.serviceWorker.controller && !window.crossOriginIsolated) {
+    reloadPage();
   }
 }
 
@@ -86,18 +150,6 @@ if (typeof window === "undefined") {
   self.addEventListener("install", handleInstall);
   self.addEventListener("activate", handleActivate);
   self.addEventListener("fetch", handleFetch);
-} else if (navigator.serviceWorker) {
+} else {
   registerServiceWorker();
-}
-
-function applyHeaders(response) {
-  if (!response) return response;
-  const headers = new Headers(response.headers);
-  headers.set("Cross-Origin-Embedder-Policy", "require-corp");
-  headers.set("Cross-Origin-Opener-Policy", "same-origin");
-  return new Response(response.body, {
-    status: response.status,
-    statusText: response.statusText,
-    headers,
-  });
 }
