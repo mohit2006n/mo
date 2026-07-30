@@ -169,7 +169,7 @@ async function runAdapter(task, onProgress) {
   return runTask(task, onProgress);
 }
 const flow = new Queue({
-  concurrency: PARALLEL_LIMIT,
+  concurrency: PARALLEL_SLOTS,
 });
 flow.registerAdapter('default', runAdapter).configureInterface({
   async inspect(file) {
