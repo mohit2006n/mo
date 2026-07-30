@@ -648,7 +648,7 @@ import "./components/index.js";
   function formatError(error) {
     const message = String(error.message);
     if (/memory|abort|out of bounds|infinity/i.test(message)) {
-      return "Memory limit or aborted";
+      return "Out of memory or aborted";
     }
 
     if (/codec|encoder|decoder|invalid data/i.test(message)) {

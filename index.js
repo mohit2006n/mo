@@ -17,9 +17,9 @@ const MAX_FILE_BYTES = 2 * 1024 * 1024 * 1024;
 const MAX_TOTAL_BYTES = 4 * 1024 * 1024 * 1024;
 const DEVICE_MEMORY = Number(globalThis.navigator?.deviceMemory) || 4;
 const PROCESSORS = Number(globalThis.navigator?.hardwareConcurrency) || 4;
-const MEMORY_LIMIT =
+const MEMORY_CAP =
   DEVICE_MEMORY <= 2 ? 2 : DEVICE_MEMORY <= 4 ? 4 : DEVICE_MEMORY <= 8 ? 6 : 8;
-const PARALLEL_LIMIT = Math.max(1, Math.min(PROCESSORS, MEMORY_LIMIT));
+const PARALLEL_SLOTS = Math.max(1, Math.min(PROCESSORS, MEMORY_CAP));
 let activeCount = 0;
 const DIRECTORY = 'cached';
 let directoryPromise;
@@ -208,8 +208,7 @@ flow.registerAdapter('default', runAdapter).configureInterface({
 });
 export const maxFileBytes = MAX_FILE_BYTES;
 export const maxTotalBytes = MAX_TOTAL_BYTES;
-export const parallel = PARALLEL_LIMIT;
-export const parallelLimit = PARALLEL_LIMIT;
+export const parallel = PARALLEL_SLOTS;
 export const canUseDocuments = () =>
   globalThis.crossOriginIsolated &&
   typeof globalThis.SharedArrayBuffer !== 'undefined';
