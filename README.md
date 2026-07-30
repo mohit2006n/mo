@@ -23,12 +23,10 @@ import {
   transform,
   inspect,
   formats,
-  beginBatch,
-  createZip,
-  readResult,
-  deleteResult,
-  clearExpiredResults,
-  dispose,
+  canUseDocuments,
+  maxFileBytes,
+  maxTotalBytes,
+  parallelLimit,
 } from './index.js';
 ```
 
