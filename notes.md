@@ -132,7 +132,7 @@ To run with full features (including multithreaded WebAssembly for DOCX, PPTX, a
 
 ## Practical limits
 
-- Maximum accepted input is 2 GB per individual file and 4 GB total per conversion session, but available memory may lower the practical limit.
+- Maximum accepted input is 2 GB per individual file and 4 GB total per conversion session based on available memory.
 - Large media, documents, and camera RAW files require more memory and time.
 - Scanned PDFs require OCR before their text can become editable.
 - Background tabs may be slowed by the browser.

@@ -26,7 +26,7 @@ import {
   canUseDocuments,
   maxFileBytes,
   maxTotalBytes,
-  parallelLimit,
+  parallel,
 } from './index.js';
 ```
 
@@ -34,7 +34,7 @@ import {
 
 #### `transform(request, options)`
 
-Converts individual files or batch arrays of files on the client-side task queue. Enforces a 2 GB per-file size limit and 4 GB total size limit.
+Converts individual files or batch arrays of files on the client-side task queue. Maximum 2 GB per file and 4 GB total per batch.
 
 - **Arguments**:
   - `request`: A request object `{ file, target, persistResult }` or an array of request objects.

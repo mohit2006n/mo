@@ -208,6 +208,7 @@ flow.registerAdapter('default', runAdapter).configureInterface({
 });
 export const maxFileBytes = MAX_FILE_BYTES;
 export const maxTotalBytes = MAX_TOTAL_BYTES;
+export const parallel = PARALLEL_LIMIT;
 export const parallelLimit = PARALLEL_LIMIT;
 export const canUseDocuments = () =>
   globalThis.crossOriginIsolated &&
