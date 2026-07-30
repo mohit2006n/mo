@@ -56,8 +56,14 @@ function handleInstall(event) {
   event.waitUntil(
     caches
       .open(cacheName)
-      .then((cache) => cache.addAll(staticAssets))
-      .then(() => self.skipWaiting()),
+      .then((cache) =>
+        Promise.allSettled(
+          staticAssets.map((asset) =>
+            cache.add(asset).catch((err) => console.warn("Failed to cache:", asset, err))
+          )
+        )
+      )
+      .then(() => self.skipWaiting())
   );
 }
 
@@ -99,16 +105,14 @@ function handleFetch(event) {
 }
 
 function registerServiceWorker() {
-  const scriptUrl = document.currentScript
-    ? document.currentScript.src
-    : "sw.js";
-
-  navigator.serviceWorker.register(scriptUrl).then((registration) => {
-    registration.addEventListener("updatefound", () => location.reload());
-    if (registration.active && !navigator.serviceWorker.controller) {
-      location.reload();
-    }
-  });
+  if ("serviceWorker" in navigator) {
+    const scriptUrl = document.currentScript
+      ? document.currentScript.src
+      : "./sw.js";
+    navigator.serviceWorker.register(scriptUrl).catch((err) => {
+      console.warn("ServiceWorker registration failed:", err);
+    });
+  }
 }
 
 if (typeof window === "undefined") {
