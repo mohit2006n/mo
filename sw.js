@@ -72,11 +72,7 @@ function handleFetch(event) {
         }
         return applyHeaders(res);
       })
-      .catch(async () => {
-        const cached = await caches.match(event.request);
-        const fallback = cached || (await caches.match("./"));
-        return applyHeaders(fallback);
-      })
+      .catch(() => caches.match(event.request).then((cached) => applyHeaders(cached)))
   );
 }
 
