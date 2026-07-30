@@ -1,0 +1,17 @@
+{
+  "name": "Morph",
+  "start_url": "./",
+  "display": "standalone",
+  "icons": [
+    {
+      "src": "./src/assets/morph/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "./src/assets/morph/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

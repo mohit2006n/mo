@@ -1,0 +1,123 @@
+@layer components {
+  .btn {
+    position: relative;
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    gap: calc(var(--spacing) * 1.5);
+    white-space: nowrap;
+    border-radius: var(--radius-lg);
+    font-size: 0.875rem;
+    font-weight: 500;
+    line-height: 1.25;
+    cursor: default;
+    border: 1px solid transparent;
+    text-decoration: none;
+    user-select: none;
+    height: 2rem;
+    padding: 0 calc(var(--spacing) * 2.5);
+    background-color: var(--foreground);
+    color: var(--background);
+    outline: none;
+    transition:
+      background-color var(--duration-normal),
+      border-color var(--duration-normal),
+      color var(--duration-normal);
+    @media (hover: hover) {
+      &:hover {
+        background-color: oklch(from var(--foreground) l c h / 0.9);
+      }
+    }
+    &:active {
+      background-color: oklch(from var(--foreground) l c h / 0.9);
+      transition: none;
+    }
+    &:empty:not(.btn-icon-sm) {
+      display: none;
+    }
+    &:focus-visible:not(:active) {
+      border-color: var(--ring);
+      outline: none;
+      transition: none;
+    }
+    &:disabled {
+      pointer-events: none;
+      opacity: 0.5;
+    }
+    &.btn-outline {
+      border: 1px solid var(--border);
+      background-color: color-mix(in srgb, var(--foreground) 1%, transparent);
+      color: var(--foreground);
+      @media (hover: hover) {
+        &:hover {
+          background-color: color-mix(
+            in srgb,
+            var(--foreground) 2%,
+            transparent
+          );
+          color: var(--foreground);
+        }
+      }
+      &:active {
+        background-color: color-mix(in srgb, var(--foreground) 2%, transparent);
+        color: var(--foreground);
+      }
+    }
+    &.btn-ghost {
+      background-color: transparent;
+      color: var(--foreground);
+      @media (hover: hover) {
+        &:hover {
+          background-color: var(--muted);
+          color: var(--foreground);
+        }
+      }
+      &:active {
+        background-color: var(--muted);
+        color: var(--foreground);
+      }
+    }
+    &.btn-link {
+      background-color: transparent;
+      color: var(--primary);
+      text-underline-offset: 4px;
+      height: auto;
+      padding: 0;
+      border-radius: 0;
+      border: none;
+      @media (hover: hover) {
+        &:hover {
+          text-decoration: underline;
+          background-color: transparent;
+        }
+      }
+      &:active {
+        text-decoration: underline;
+        background-color: transparent;
+      }
+    }
+    &.btn-sm {
+      height: 1.75rem;
+      padding: 0 calc(var(--spacing) * 2.5);
+    }
+    &.btn-lg {
+      height: 2.25rem;
+      padding: 0 calc(var(--spacing) * 6);
+    }
+    &.btn-xl {
+      height: 2.5rem;
+      padding: 0 calc(var(--spacing) * 8);
+      font-size: 1rem;
+    }
+    &.btn-wide {
+      padding-inline: 2.5rem;
+    }
+    &.btn-icon-sm {
+      flex-shrink: 0;
+      height: 1.75rem;
+      width: 1.75rem;
+      padding: 0;
+    }
+  }
+}

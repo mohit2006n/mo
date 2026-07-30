@@ -1,0 +1,461 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="Convert images, media, PDFs, presentations, documents, and data locally at original quality."
+    />
+    <script>
+      {
+        const theme = localStorage.getItem('theme') || 'system';
+        const isDark =
+          theme === 'system'
+            ? matchMedia('(prefers-color-scheme: dark)').matches
+            : theme === 'dark';
+        document.documentElement.classList.toggle('dark', isDark);
+        document.documentElement.classList.toggle(
+          'light',
+          !isDark && theme !== 'system'
+        );
+      }
+    </script>
+    <title>Morph</title>
+    <script src="./sw.js"></script>
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <meta name="theme-color" content="#09090b" />
+    <link rel="apple-touch-icon" href="./src/assets/morph/icon-192.png" />
+    <link
+      rel="icon"
+      href="./src/assets/morph/morph-icon.svg"
+      type="image/svg+xml"
+    />
+    <link rel="stylesheet" href="./src/components/index.css" />
+    <link rel="stylesheet" href="./src/style.css" />
+  </head>
+  <body>
+    <button class="skip-link" id="skipButton" type="button">
+      Skip to conversion area
+    </button>
+    <header class="app-header">
+      <div class="header-inner">
+        <a class="app-title" href="./" aria-label="Morph home">
+          <img
+            class="morph-mark"
+            src="./src/assets/morph/morph-icon-wordmark-light.svg"
+            alt="Morph"
+          />
+        </a>
+        <nav
+          class="header-actions"
+          aria-label="Project links and display settings"
+        >
+          <a
+            class="btn btn-ghost btn-icon-sm github-link"
+            href="https://github.com/mohit-ksahu"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Open GitHub profile"
+            title="GitHub"
+          >
+            <span class="icon icon-github" aria-hidden="true"></span>
+          </a>
+          <button
+            class="btn btn-ghost btn-icon-sm theme-toggle"
+            id="themeToggle"
+            type="button"
+            aria-label="Switch between light and dark mode"
+            title="Switch theme"
+          >
+            <span class="icon icon-theme" aria-hidden="true"></span>
+          </button>
+        </nav>
+      </div>
+    </header>
+    <main>
+      <section class="hero-section" aria-labelledby="pageTitle">
+        <div class="hero-copy">
+          <h1 class="hero-title" id="pageTitle">Convert any file</h1>
+          <p class="hero-description">
+            Choose a file, select an output format, and download at original
+            lossless quality.
+            <button class="btn btn-link" id="formatsButton" type="button">
+              See supported formats
+            </button>
+          </p>
+        </div>
+        <section
+          class="card"
+          id="conversion"
+          aria-labelledby="conversionTitle"
+          tabindex="-1"
+        >
+          <div class="card-header">
+            <div class="card-title-group">
+              <button
+                class="btn btn-ghost btn-icon-sm"
+                id="backButton"
+                type="button"
+                aria-label="Go back"
+                title="Go back"
+                hidden
+              >
+                <span
+                  class="icon icon-arrow icon-back"
+                  aria-hidden="true"
+                ></span>
+              </button>
+              <h2 class="card-title" id="conversionTitle">Convert files</h2>
+            </div>
+            <p class="card-description">
+              Add one file or a batch of compatible files.
+            </p>
+          </div>
+          <div class="card-content">
+            <div
+              class="drop-zone"
+              id="dropZone"
+              tabindex="0"
+              role="button"
+              aria-label="Choose files or drag and drop files here"
+            >
+              <input id="fileInput" type="file" multiple hidden />
+              <div class="drop-icon" aria-hidden="true">
+                <span class="icon icon-upload" aria-hidden="true"></span>
+              </div>
+              <span class="btn btn-xl btn-wide">Choose files</span>
+              <p class="drop-prompt"><strong>or drop files here</strong></p>
+              <small class="drop-formats"
+                >Documents, PDF, images, media and data</small
+              >
+            </div>
+          </div>
+          <div class="workspace" id="workspace" hidden>
+            <div class="queue-header">
+              <div class="selection-summary">
+                <label class="select-all-label" for="selectAllFiles">
+                  <input
+                    class="checkbox"
+                    id="selectAllFiles"
+                    type="checkbox"
+                    checked
+                  />
+                  <span>Select all</span>
+                </label>
+                <label
+                  class="select-all-label"
+                  id="selectPendingGroup"
+                  for="selectPendingFiles"
+                  hidden
+                >
+                  <input
+                    class="checkbox"
+                    id="selectPendingFiles"
+                    type="checkbox"
+                  />
+                  <span id="selectPendingLabel">Pending</span>
+                </label>
+                <label
+                  class="select-all-label"
+                  id="selectConvertedGroup"
+                  for="selectConvertedFiles"
+                  hidden
+                >
+                  <input
+                    class="checkbox"
+                    id="selectConvertedFiles"
+                    type="checkbox"
+                  />
+                  <span id="selectConvertedLabel">Converted</span>
+                </label>
+                <label
+                  class="select-all-label"
+                  id="selectConvertingGroup"
+                  for="selectConvertingFiles"
+                  hidden
+                >
+                  <input
+                    class="checkbox"
+                    id="selectConvertingFiles"
+                    type="checkbox"
+                  />
+                  <span id="selectConvertingLabel">Converting</span>
+                </label>
+                <span id="queueCount">0 files</span>
+              </div>
+              <div class="queue-actions">
+                <button
+                  class="btn btn-outline btn-sm"
+                  id="addMoreButton"
+                  type="button"
+                >
+                  <span class="icon icon-plus" aria-hidden="true"></span>
+                  Add files
+                </button>
+              </div>
+            </div>
+            <ul class="file-queue" id="fileQueue" aria-live="polite"></ul>
+            <div class="card-footer">
+              <div class="target-field">
+                <select
+                  class="select"
+                  id="targetFormat"
+                  aria-label="Output format"
+                >
+                  <button>
+                    <selectedcontent></selectedcontent>
+                    <span
+                      class="select-indicator icon icon-chevron"
+                      aria-hidden="true"
+                    ></span>
+                  </button>
+                </select>
+              </div>
+              <button
+                class="btn btn-lg btn-wide"
+                id="convertButton"
+                type="button"
+                disabled
+              >
+                <span>Convert files</span>
+              </button>
+            </div>
+          </div>
+        </section>
+      </section>
+      <section
+        class="formats-section"
+        id="supported-formats"
+        aria-labelledby="formatsTitle"
+      >
+        <div class="section-heading">
+          <h2 class="section-title" id="formatsTitle">What you can convert</h2>
+          <p class="section-copy">
+            Each file shows the output formats available for that source.
+          </p>
+        </div>
+        <div class="format-list">
+          <div class="format-list-header">
+            <span class="format-col-label">Format</span>
+            <span class="format-col-label">Input</span>
+            <span class="format-col-label">Output</span>
+          </div>
+          <div id="formatGrid"></div>
+        </div>
+      </section>
+      <section class="faq-section" id="faq" aria-labelledby="faqTitle">
+        <div class="faq-intro">
+          <h2 class="faq-title" id="faqTitle">Frequently asked questions</h2>
+          <p class="faq-copy">
+            Morph brings document, PDF, image, media, and data conversion into
+            one focused workspace. Use it for a single file or a mixed batch,
+            with an output choice for every file.
+          </p>
+        </div>
+        <div class="faq-list">
+          <details class="accordion">
+            <summary class="accordion-trigger">
+              <span>What can I convert?</span>
+              <span
+                class="accordion-icon accordion-collapsed-only icon icon-plus"
+                aria-hidden="true"
+              ></span>
+              <span
+                class="accordion-icon accordion-expanded-only icon icon-minus"
+                aria-hidden="true"
+              ></span>
+            </summary>
+            <div class="accordion-content">
+              <p>
+                You can convert documents, slides, images, audio, video,
+                spreadsheets, and data. Check the table above to see all
+                supported formats.
+              </p>
+            </div>
+          </details>
+          <details class="accordion">
+            <summary class="accordion-trigger">
+              <span>Are my files private?</span>
+              <span
+                class="accordion-icon accordion-collapsed-only icon icon-plus"
+                aria-hidden="true"
+              ></span>
+              <span
+                class="accordion-icon accordion-expanded-only icon icon-minus"
+                aria-hidden="true"
+              ></span>
+            </summary>
+            <div class="accordion-content">
+              <p>
+                Yes. Everything converts right on your device. Your files are
+                never uploaded or sent to any server.
+              </p>
+            </div>
+          </details>
+          <details class="accordion">
+            <summary class="accordion-trigger">
+              <span>Why is the first conversion a bit slower?</span>
+              <span
+                class="accordion-icon accordion-collapsed-only icon icon-plus"
+                aria-hidden="true"
+              ></span>
+              <span
+                class="accordion-icon accordion-expanded-only icon icon-minus"
+                aria-hidden="true"
+              ></span>
+            </summary>
+            <div class="accordion-content">
+              <p>
+                The app loads the conversion tools it needs the first time you
+                use them. After that, conversions are fast.
+              </p>
+            </div>
+          </details>
+          <details class="accordion">
+            <summary class="accordion-trigger">
+              <span>Why do some files look slightly different?</span>
+              <span
+                class="accordion-icon accordion-collapsed-only icon icon-plus"
+                aria-hidden="true"
+              ></span>
+              <span
+                class="accordion-icon accordion-expanded-only icon icon-minus"
+                aria-hidden="true"
+              ></span>
+            </summary>
+            <div class="accordion-content">
+              <p>
+                Some files use special fonts or styling that may not be
+                available on your device, so they can look a little different.
+              </p>
+            </div>
+          </details>
+          <details class="accordion">
+            <summary class="accordion-trigger">
+              <span>How do I convert multiple files?</span>
+              <span
+                class="accordion-icon accordion-collapsed-only icon icon-plus"
+                aria-hidden="true"
+              ></span>
+              <span
+                class="accordion-icon accordion-expanded-only icon icon-minus"
+                aria-hidden="true"
+              ></span>
+            </summary>
+            <div class="accordion-content">
+              <p>
+                Pick a target format for each file, select the ones you want,
+                and click convert. You can download them one by one or together
+                in a ZIP file.
+              </p>
+            </div>
+          </details>
+        </div>
+      </section>
+    </main>
+    <footer class="app-footer">
+      <div class="footer-inner">
+        <div class="footer-top">
+          <div class="footer-brand">
+            <a class="app-title footer-title" href="./" aria-label="Morph home">
+              <img
+                class="morph-mark"
+                src="./src/assets/morph/morph-icon-wordmark-light.svg"
+                alt="Morph"
+              />
+            </a>
+            <p class="footer-description">
+              Convert documents, images, media, and data directly on your device
+              with zero remote uploads.
+            </p>
+            <div class="footer-socials">
+              <a
+                class="btn btn-outline btn-sm social-link"
+                href="https://github.com/mohit-ksahu"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="GitHub Profile"
+              >
+                <span class="icon icon-github" aria-hidden="true"></span>
+                <span>GitHub</span>
+              </a>
+            </div>
+          </div>
+          <nav class="footer-nav" aria-label="Footer navigation">
+            <div class="footer-col">
+              <h3 class="footer-heading">Documentation</h3>
+              <ul class="footer-links">
+                <li><a href="./README.md">About &amp; Guide</a></li>
+              </ul>
+            </div>
+            <div class="footer-col">
+              <h3 class="footer-heading">Legal</h3>
+              <ul class="footer-links">
+                <li><a href="./LICENSE">License</a></li>
+              </ul>
+            </div>
+          </nav>
+        </div>
+        <div class="footer-bottom">
+          <span class="footer-copyright">© 2026 Morph.</span>
+        </div>
+      </div>
+    </footer>
+    <canvas id="qtcanvas" hidden aria-hidden="true"></canvas>
+    <template id="queueItemTemplate">
+      <li class="file-item">
+        <input
+          class="checkbox file-checkbox"
+          type="checkbox"
+          aria-label="Select file"
+          checked
+        />
+        <div class="file-type-icon"><span class="file-type-label"></span></div>
+        <div class="file-info">
+          <div class="file-identity">
+            <strong class="file-name"></strong>
+            <span class="file-progress-percent"></span>
+            <span
+              class="file-verified icon icon-verified"
+              role="img"
+              aria-label="Converted successfully"
+              hidden
+            ></span>
+          </div>
+          <span class="file-detail"></span>
+          <div class="file-progress"><span class="progress-value"></span></div>
+        </div>
+        <div class="file-output">
+          <span class="output-label">Converts to</span>
+          <select
+            class="select file-target-select"
+            aria-label="Output format for this file"
+          ></select>
+          <button
+            class="btn btn-outline btn-sm download-button"
+            type="button"
+            hidden
+          >
+            Download
+          </button>
+        </div>
+        <button
+          class="btn btn-ghost btn-icon-sm remove-file"
+          type="button"
+          aria-label="Remove file"
+        >
+          <span class="icon icon-close" aria-hidden="true"></span>
+        </button>
+      </li>
+    </template>
+    <template id="formatCardTemplate">
+      <div class="format-row">
+        <span class="format-row-name format-card-name"></span>
+        <div class="format-tags format-input-tags"></div>
+        <div class="format-tags format-output-tags"></div>
+      </div>
+    </template>
+    <script type="module" src="./src/script.js"></script>
+  </body>
+</html>
