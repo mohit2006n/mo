@@ -88,19 +88,20 @@ function handleFetch(event) {
   }
 
   event.respondWith(
-    caches.match(event.request).then((cached) => {
-      if (cached) {
-        return applyHeaders(cached);
-      }
-
-      return fetch(event.request).then((response) => {
+    fetch(event.request)
+      .then((response) => {
         if (!response.bodyUsed && response.status === 200) {
           const copy = response.clone();
-          caches.open(cacheName).then((cache) => cache.put(event.request, copy)).catch(() => {});
+          caches
+            .open(cacheName)
+            .then((cache) => cache.put(event.request, copy))
+            .catch(() => {});
         }
         return applyHeaders(response);
-      });
-    }),
+      })
+      .catch(() =>
+        caches.match(event.request).then((cached) => applyHeaders(cached))
+      )
   );
 }
 
