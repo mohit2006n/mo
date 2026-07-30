@@ -57,16 +57,32 @@ Retrieves all configured format groups in the system.
 
 ## Supported formats
 
-Common formats covered across major categories:
+Morph supports a comprehensive set of file format categories locally:
 
-- **Documents & Presentations**: DOCX, PPTX, ODT, ODP, HTML, Markdown, TXT, EPUB, RTF
-- **PDF**: Convert PDF to DOCX, PPTX, TXT, PNG, and JPG
-- **Spreadsheets & Data**: XLSX, XLS, ODS, CSV, TSV, JSON, NDJSON, YAML, XML, TOML, INI, DBF, DIF, SYLK
-- **Images & RAW**: PNG, JPEG, WebP, SVG, AVIF, HEIC, TIFF, TGA, and camera RAW formats (CR2, CR3, NEF, ARW, RAF, ORF, RW2, PEF)
-- **Audio & Video**: MP4, WebM, MKV, AVI, MOV, MP3, WAV, OGG, FLAC, AAC, M4A, OPUS, AIFF
-- **Archives**: ZIP, RAR, 7Z, TAR, GZIP, TGZ
-- **Subtitles & Ebooks**: SRT, WebVTT, ASS, SSA, MOBI, AZW
-- **Databases**: SQLite (.sqlite, .db)
+- **Images & Camera RAW**:
+  - *Inputs*: PNG, APNG, JPG, JPEG, JFIF, WebP, BMP, GIF, SVG, ICO, AVIF, TIFF, TIF, HEIC, HEIF, TGA, RAW, DNG, CR2, CR3, CRW, NEF, NRW, ARW, SRF, SR2, RAF, ORF, RW2, PEF, RWL, 3FR, MRW, X3F
+  - *Outputs*: PNG, JPG, WebP, BMP, TIFF, ICO, PDF, PPTX
+- **Video & Animations**:
+  - *Inputs*: MP4, WebM, MOV, MKV, AVI, WMV, FLV, M4V, F4V, MPEG, MPG, 3GP, 3G2, OGV, TS, MTS, M2TS, VOB, ASF, MXF, RM, RMVB, DIVX
+  - *Outputs*: MP4, WebM, MOV, MKV, AVI, GIF, MP3, WAV, OGG, OPUS, FLAC, AIFF, M4A, AAC, SRT, WebVTT, ASS, TXT, HTML
+- **Audio**:
+  - *Inputs*: MP3, MP2, WAV, OGG, OGA, OPUS, FLAC, M4A, M4B, AAC, CAF, VOC, WMA, AC3, EAC3, AMR, APE, AU, MKA, AIFF, AIF, RA, TTA, DSF, DFF
+  - *Outputs*: MP3, WAV, OGG, OPUS, FLAC, AIFF, M4A, AAC
+- **Documents & Presentations**:
+  - *Inputs*: DOCX, DOC, DOCM, DOTX, DOTM, PPTX, PPT, PPTM, PPS, PPSX, POTX, POTM, ODT, OTT, FODT, ODP, OTP, FODP, RTF, HTML, HTM, Markdown (MD), TXT, LOG
+  - *Outputs*: DOCX, PPTX, PDF, HTML, Markdown, TXT
+- **PDF & Ebooks**:
+  - *Inputs*: PDF, EPUB, MOBI, AZW, AZW3
+  - *Outputs*: PDF, DOCX, PPTX, HTML, Markdown, TXT, PNG, JPG
+- **Spreadsheets, Data & Databases**:
+  - *Inputs*: XLSX, XLS, XLSM, XLSB, XLTX, XLTM, ODS, OTS, FODS, CSV, TSV, JSON, NDJSON, YAML, YML, XML, TOML, INI, DBF, DIF, SYLK, SQLite (.sqlite, .sqlite3, .db)
+  - *Outputs*: XLSX, ODS, CSV, TSV, JSON, NDJSON, YAML, XML, TOML, INI, PDF, HTML
+- **Archives**:
+  - *Inputs*: ZIP, RAR, 7Z, TAR, GZIP (GZ), TGZ
+  - *Outputs*: ZIP, TAR, TGZ, GZIP (GZ)
+- **Subtitles**:
+  - *Inputs*: SRT, WebVTT, ASS, SSA
+  - *Outputs*: SRT, WebVTT, ASS, TXT, HTML
 
 ## Lossless Conversion Quality
 
