@@ -109,7 +109,18 @@ function registerServiceWorker() {
     const scriptUrl = document.currentScript
       ? document.currentScript.src
       : "./sw.js";
-    navigator.serviceWorker.register(scriptUrl).catch((err) => {
+    
+    let refreshing = false;
+    navigator.serviceWorker.addEventListener("controllerchange", () => {
+      if (!refreshing) {
+        refreshing = true;
+        window.location.reload();
+      }
+    });
+
+    navigator.serviceWorker.register(scriptUrl).then((registration) => {
+      registration.update().catch(() => {});
+    }).catch((err) => {
       console.warn("ServiceWorker registration failed:", err);
     });
   }
