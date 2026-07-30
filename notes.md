@@ -27,42 +27,40 @@ Its goals are:
 
 ## What it supports
 
-### Documents and presentations
-
-Word, PowerPoint, OpenDocument, HTML, Markdown, text, EPUB, RTF, and related formats.
+### Documents & Presentations
+- **Inputs**: DOCX, DOC, DOCM, DOTX, DOTM, PPTX, PPT, PPTM, PPS, PPSX, POTX, POTM, ODT, OTT, FODT, ODP, OTP, FODP, RTF, HTML, HTM, Markdown (MD), TXT, LOG
+- **Outputs**: DOCX, PPTX, PDF, HTML, Markdown, TXT
 Rich routes preserve fonts, colors, tables, images, layout, pages, and positioning when possible.
 
-### PDF
+### PDF & Ebooks
+- **Inputs**: PDF, EPUB, MOBI, AZW, AZW3
+- **Outputs**: PDF, DOCX, PPTX, HTML, Markdown, TXT, PNG, JPG
+Recognized text remains editable with approximate positioning, size, font, weight, and color. Complex graphics stay in a high-quality background layer.
 
-PDF can be converted to:
+### Spreadsheets, Data & Databases
+- **Inputs**: XLSX, XLS, XLSM, XLSB, XLTX, XLTM, ODS, OTS, FODS, CSV, TSV, JSON, NDJSON, YAML, YML, XML, TOML, INI, DBF, DIF, SYLK, SQLite (.sqlite, .sqlite3, .db)
+- **Outputs**: XLSX, ODS, CSV, TSV, JSON, NDJSON, YAML, XML, TOML, INI, PDF, HTML
+XLSX and ODS conversion retains formulas, formatting, sheets, data types, and column information.
 
-- Editable DOCX
-- Editable PPTX
-- TXT
-- PNG
-- JPG
-  Recognized text remains editable with approximate positioning, size, font, weight, and color. Complex graphics stay in a high-quality background layer.
+### Images & Camera RAW
+- **Inputs**: PNG, APNG, JPG, JPEG, JFIF, WebP, BMP, GIF, SVG, ICO, AVIF, TIFF, TIF, HEIC, HEIF, TGA, RAW, DNG, CR2, CR3, CRW, NEF, NRW, ARW, SRF, SR2, RAF, ORF, RW2, PEF, RWL, 3FR, MRW, X3F
+- **Outputs**: PNG, JPG, WebP, BMP, TIFF, ICO, PDF, PPTX
 
-### Spreadsheets and data
+### Video & Animations
+- **Inputs**: MP4, WebM, MOV, MKV, AVI, WMV, FLV, M4V, F4V, MPEG, MPG, 3GP, 3G2, OGV, TS, MTS, M2TS, VOB, ASF, MXF, RM, RMVB, DIVX
+- **Outputs**: MP4, WebM, MOV, MKV, AVI, GIF, MP3, WAV, OGG, OPUS, FLAC, AIFF, M4A, AAC, SRT, WebVTT, ASS, TXT, HTML
 
-Excel, ODS, CSV, TSV, JSON, NDJSON, YAML, XML, TOML, INI, DBF, DIF, and SYLK.
-XLSX and ODS conversion can retain formulas, formatting, sheets, data types, and column information.
+### Audio
+- **Inputs**: MP3, MP2, WAV, OGG, OGA, OPUS, FLAC, M4A, M4B, AAC, CAF, VOC, WMA, AC3, EAC3, AMR, APE, AU, MKA, AIFF, AIF, RA, TTA, DSF, DFF
+- **Outputs**: MP3, WAV, OGG, OPUS, FLAC, AIFF, M4A, AAC
 
-### Images
+### Archives
+- **Inputs**: ZIP, RAR, 7Z, TAR, GZIP (GZ), TGZ
+- **Outputs**: ZIP, TAR, TGZ, GZIP (GZ)
 
-Common images, SVG, AVIF, HEIC, TIFF, TGA, and camera RAW formats (CR2, CR3, NEF, ARW, RAF, ORF, RW2, PEF).
-Same-format output preserves the original.
-
-### Media
-
-Common audio and video formats (MP4, WebM, MKV, AVI, MOV, MP3, WAV, OGG, FLAC, AAC, M4A) with support for metadata, chapters, multiple audio tracks, subtitles, attachments, and orientation where the target allows them.
-
-### Additional formats
-
-- ZIP, RAR, 7Z, TAR, GZIP, and TGZ archives
-- DRM-free MOBI and AZW ebooks
-- SRT, WebVTT, ASS, and SSA subtitles
-- SQLite databases (.sqlite, .db)
+### Subtitles
+- **Inputs**: SRT, WebVTT, ASS, SSA
+- **Outputs**: SRT, WebVTT, ASS, TXT, HTML
 
 ## Project ideas
 
