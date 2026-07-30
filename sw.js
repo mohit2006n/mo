@@ -100,7 +100,12 @@ function handleFetch(event) {
         return applyHeaders(response);
       })
       .catch(() =>
-        caches.match(event.request).then((cached) => applyHeaders(cached))
+        caches.match(event.request).then((cached) => {
+          if (cached) {
+            return applyHeaders(cached);
+          }
+          return caches.match("./").then((fallback) => applyHeaders(fallback));
+        })
       )
   );
 }
