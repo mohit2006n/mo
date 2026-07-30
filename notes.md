@@ -68,7 +68,7 @@ XLSX and ODS conversion retains formulas, formatting, sheets, data types, and co
 - **Parallel Work Scheduling**: Task concurrency and memory weighting based on available system RAM and logical processors.
 - **Unified Transformation Interface**: A single polymorphic `transform()` function handling individual objects and array batches automatically.
 - **Client-Side Heavy Processing**: Utilizing WebAssembly engines (`LibreOffice`, `FFmpeg`, `PDF.js`, `SheetJS`, `libarchive`, `sql.js`) for on-device processing.
-- **Modular Adapter System**: Pluggable converter adapters (`media`, `suite`, `browser`) allowing seamless expansion for future format handlers or network services.
+- **Modular Domain Processing**: Dedicated converter domain handlers (`media`, `document`/`suite`, `image`, `data`, `database`, `archive`, `ebook`, `subtitle`) ensuring clear separation of format logic.
   The processing code does not depend on the frontend.
 
 ## Programmatic usage

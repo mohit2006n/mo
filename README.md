@@ -37,7 +37,7 @@ import {
 Converts individual files or batch arrays of files on the client-side task queue. Maximum 2 GB per file and 4 GB total per batch.
 
 - **Arguments**:
-  - `request`: A request object `{ file, target, persistResult }` or an array of request objects.
+  - `request`: A request object `{ file, target, save }` or an array of request objects.
   - `options`: Optional configuration object (e.g. `{ onProgress, onStart, onComplete, onError }`).
 - **Returns**: A Promise resolving to the conversion results.
 

@@ -2,7 +2,7 @@
  * Public file conversion API.
  */
 import { normalize, normalizeBatch, snapshot } from './lib/contract.js';
-import { kinds, process } from './lib/flow.js';
+import { process } from './lib/flow.js';
 import {
   FORMAT_GROUPS,
   baseName,
@@ -13,6 +13,7 @@ import {
 import { Queue } from './lib/queue.js';
 import { state } from './lib/state.js';
 import { use } from './lib/runtime.js';
+
 const MAX_FILE_BYTES = 2 * 1024 * 1024 * 1024;
 const MAX_TOTAL_BYTES = 4 * 1024 * 1024 * 1024;
 const DEVICE_MEMORY = Number(globalThis.navigator?.deviceMemory) || 4;
@@ -165,53 +166,41 @@ async function runTask(task, onProgress) {
   }
 }
 
-async function runAdapter(task, onProgress) {
-  return runTask(task, onProgress);
+async function buildTask(file, target, options = {}) {
+  assertSize([{ file }]);
+  const { rawExt, ext, kind } = await identify(file);
+  if (!kind) {
+    throw new Error(`Unsupported file type: ${file.name}`);
+  }
+  if (!outputs(kind, ext).includes(target)) {
+    throw new Error(`.${ext} cannot be processed as .${target}`);
+  }
+  const item = {
+    id: `item-${Date.now()}-${taskId()}`,
+    file,
+    rawExt,
+    ext,
+    kind,
+    target,
+  };
+  return {
+    item,
+    save: Boolean(options.save),
+    options,
+  };
 }
-const flow = new Queue({
+
+const queue = new Queue({
   concurrency: PARALLEL_SLOTS,
 });
-flow.registerAdapter('default', runAdapter).configureInterface({
-  async inspect(file) {
-    const { rawExt, ext, kind } = await identify(file);
-    return {
-      rawExt,
-      ext,
-      kind,
-      outputs: kind ? outputs(kind, ext) : [],
-    };
-  },
-  async createTask(file, target, options = {}) {
-    assertSize([{ file }]);
-    const { rawExt, ext, kind } = await identify(file);
-    if (!kind) {
-      throw new Error(`Unsupported file type: ${file.name}`);
-    }
-    if (!outputs(kind, ext).includes(target)) {
-      throw new Error(`.${ext} cannot be processed as .${target}`);
-    }
-    const item = {
-      id: `item-${Date.now()}-${taskId()}`,
-      file,
-      rawExt,
-      ext,
-      kind,
-      target,
-    };
-    return {
-      adapter: 'default',
-      item,
-      save: Boolean(options.save),
-      options,
-    };
-  },
-});
+
 export const maxFileBytes = MAX_FILE_BYTES;
 export const maxTotalBytes = MAX_TOTAL_BYTES;
 export const parallel = PARALLEL_SLOTS;
 export const canUseDocuments = () =>
   globalThis.crossOriginIsolated &&
   typeof globalThis.SharedArrayBuffer !== 'undefined';
+
 export async function transform(request, options = {}) {
   const list = Array.isArray(request)
     ? normalizeBatch(request)
@@ -220,24 +209,31 @@ export async function transform(request, options = {}) {
   if (Array.isArray(request)) {
     const tasks = await Promise.all(
       list.map((item) =>
-        flow.createTask(item.file, item.target, {
+        buildTask(item.file, item.target, {
           save: item.save,
           signal: item.signal,
           ...options,
         })
       )
     );
-    return flow.run(tasks, options);
+    return queue.run(tasks, runTask, options);
   }
-  const task = await flow.createTask(list[0].file, list[0].target, {
+  const task = await buildTask(list[0].file, list[0].target, {
     ...options,
     save: list[0].save || Boolean(options.save),
     signal: list[0].signal,
   });
-  return flow.execute(task, options.onProgress);
+  return runTask(task, options.onProgress);
 }
+
 export async function inspect(file) {
-  return flow.inspect(file);
+  const { rawExt, ext, kind } = await identify(file);
+  return {
+    rawExt,
+    ext,
+    kind,
+    outputs: kind ? outputs(kind, ext) : [],
+  };
 }
 
 export function formats() {
