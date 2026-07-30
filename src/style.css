@@ -510,8 +510,8 @@ body.workspace-active .faq-section {
 .format-list-header,
 .format-row {
   display: grid;
-  grid-template-columns: 11rem 1fr 1fr;
-  gap: 0.5rem 1.5rem;
+  grid-template-columns: 6.5rem 1fr 1fr;
+  gap: 0.5rem 1.25rem;
   align-items: start;
   padding: 0.75rem 1.25rem;
 }
@@ -771,27 +771,10 @@ body.workspace-active .faq-section {
 }
 
 @media (max-width: 640px) {
-  .format-list-header {
-    display: none;
-  }
+  .format-list-header,
   .format-row {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-    padding: 1rem;
-  }
-  .format-row-name {
-    font-size: 0.9375rem;
-    font-weight: 700;
-    padding-top: 0;
-  }
-  .format-mobile-label {
-    display: block;
-    font-size: 0.6875rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--muted-foreground);
-    margin-bottom: 0.375rem;
+    grid-template-columns: 5.5rem 1fr 1fr;
+    gap: 0.5rem 0.75rem;
+    padding: 0.75rem 0.75rem;
   }
 }
