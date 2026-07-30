@@ -2,7 +2,6 @@ const cacheName = "morph-v1";
 
 const staticAssets = [
   "./",
-  "./index.html",
   "./index.js",
   "./manifest.webmanifest",
   "./src/style.css",
@@ -45,13 +44,7 @@ function handleInstall(event) {
   event.waitUntil(
     caches
       .open(cacheName)
-      .then((cache) =>
-        Promise.allSettled(
-          staticAssets.map((asset) =>
-            cache.add(asset).catch((err) => console.warn("Failed to cache:", asset, err))
-          )
-        )
-      )
+      .then((cache) => cache.addAll(staticAssets).catch(() => {}))
       .then(() => self.skipWaiting())
   );
 }
@@ -61,52 +54,35 @@ function handleActivate(event) {
     caches
       .keys()
       .then((keys) =>
-        Promise.all(
-          keys
-            .filter((key) => key !== cacheName)
-            .map((key) => caches.delete(key)),
-        ),
+        Promise.all(keys.filter((k) => k !== cacheName).map((k) => caches.delete(k)))
       )
-      .then(() => self.clients.claim()),
+      .then(() => self.clients.claim())
   );
 }
 
 function handleFetch(event) {
-  if (event.request.method !== "GET") {
-    return;
-  }
+  if (event.request.method !== "GET") return;
 
   event.respondWith(
     fetch(event.request)
-      .then((response) => {
-        if (!response.bodyUsed && response.status === 200) {
-          const copy = response.clone();
-          caches
-            .open(cacheName)
-            .then((cache) => cache.put(event.request, copy))
-            .catch(() => {});
+      .then((res) => {
+        if (!res.bodyUsed && res.status === 200) {
+          const copy = res.clone();
+          caches.open(cacheName).then((cache) => cache.put(event.request, copy)).catch(() => {});
         }
-        return applyHeaders(response);
+        return applyHeaders(res);
       })
-      .catch(() =>
-        caches.match(event.request).then((cached) => {
-          if (cached) {
-            return applyHeaders(cached);
-          }
-          return caches.match("./").then((fallback) => applyHeaders(fallback));
-        })
-      )
+      .catch(async () => {
+        const cached = await caches.match(event.request);
+        const fallback = cached || (await caches.match("./"));
+        return applyHeaders(fallback);
+      })
   );
 }
 
 function registerServiceWorker() {
   if ("serviceWorker" in navigator) {
-    const scriptUrl = document.currentScript
-      ? document.currentScript.src
-      : "./sw.js";
-    navigator.serviceWorker.register(scriptUrl).catch((err) => {
-      console.warn("ServiceWorker registration failed:", err);
-    });
+    navigator.serviceWorker.register("./sw.js").catch(() => {});
   }
 }
 
@@ -119,6 +95,7 @@ if (typeof window === "undefined") {
 }
 
 function applyHeaders(response) {
+  if (!response) return response;
   const headers = new Headers(response.headers);
   headers.set("Cross-Origin-Embedder-Policy", "require-corp");
   headers.set("Cross-Origin-Opener-Policy", "same-origin");
