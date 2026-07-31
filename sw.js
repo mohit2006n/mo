@@ -1,6 +1,6 @@
-const cacheName = "morph-v1";
+const CACHE_NAME = "morph-v1";
 
-const staticAssets = [
+const STATIC_ASSETS = [
   "./",
   "./index.js",
   "./manifest.webmanifest",
@@ -40,99 +40,37 @@ const staticAssets = [
   "./lib/word.js",
 ];
 
-function handleInstall(event) {
+self.addEventListener("install", (event) => {
   self.skipWaiting();
   event.waitUntil(
-    caches
-      .open(cacheName)
-      .then((cache) => cache.addAll(staticAssets).catch(() => {}))
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(STATIC_ASSETS).catch(() => {}))
   );
-}
+});
 
-function handleActivate(event) {
+self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches
       .keys()
       .then((keys) =>
-        Promise.all(keys.filter((k) => k !== cacheName).map((k) => caches.delete(k)))
+        Promise.all(keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key)))
       )
       .then(() => self.clients.claim())
   );
-}
+});
 
-function applyHeaders(response) {
-  if (
-    !response ||
-    response.status === 0 ||
-    response.status === 204 ||
-    response.status === 304 ||
-    response.type === "opaque" ||
-    response.type === "opaqueredirect"
-  ) {
-    return response;
-  }
-  const headers = new Headers(response.headers);
-  headers.set("Cross-Origin-Embedder-Policy", "require-corp");
-  headers.set("Cross-Origin-Opener-Policy", "same-origin");
-  headers.set("Cross-Origin-Resource-Policy", "cross-origin");
-  return new Response(response.body, {
-    status: response.status,
-    statusText: response.statusText,
-    headers,
-  });
-}
-
-function handleFetch(event) {
+self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
-  if (event.request.cache === "only-if-cached" && event.request.mode !== "same-origin") return;
 
   event.respondWith(
-    fetch(event.request)
-      .then((res) => {
-        if (!res.bodyUsed && res.status === 200 && res.type === "basic") {
-          const copy = res.clone();
-          caches.open(cacheName).then((cache) => cache.put(event.request, copy)).catch(() => {});
+    caches.match(event.request).then((cached) => {
+      if (cached) return cached;
+      return fetch(event.request).then((response) => {
+        if (response.status === 200 && response.type === "basic") {
+          const copy = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy)).catch(() => {});
         }
-        return applyHeaders(res);
-      })
-      .catch(() => caches.match(event.request).then((cached) => applyHeaders(cached)))
+        return response;
+      });
+    })
   );
-}
-
-function registerServiceWorker() {
-  if (!("serviceWorker" in navigator)) return;
-
-  if (window.crossOriginIsolated) {
-    sessionStorage.removeItem("coiReloadCount");
-    navigator.serviceWorker.register("./sw.js").catch(() => {});
-    return;
-  }
-
-  const reloadPage = () => {
-    const count = parseInt(sessionStorage.getItem("coiReloadCount") || "0", 10);
-    if (count < 2) {
-      sessionStorage.setItem("coiReloadCount", (count + 1).toString());
-      window.location.reload();
-    }
-  };
-
-  navigator.serviceWorker.addEventListener("controllerchange", () => {
-    if (!window.crossOriginIsolated) {
-      reloadPage();
-    }
-  });
-
-  if (navigator.serviceWorker.controller && !window.crossOriginIsolated) {
-    reloadPage();
-  }
-
-  navigator.serviceWorker.register("./sw.js").catch(() => {});
-}
-
-if (typeof window === "undefined") {
-  self.addEventListener("install", handleInstall);
-  self.addEventListener("activate", handleActivate);
-  self.addEventListener("fetch", handleFetch);
-} else {
-  registerServiceWorker();
-}
+});
