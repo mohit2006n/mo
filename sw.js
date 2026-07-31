@@ -1,4 +1,4 @@
-const CACHE_NAME = "morph-v2";
+const CACHE_NAME = "morph-v1";
 
 const STATIC_ASSETS = [
   "./",
