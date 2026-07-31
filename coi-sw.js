@@ -1,4 +1,3 @@
-let coepCredentialless = false;
 if (typeof window === 'undefined') {
     try {
         importScripts("./sw.js");
@@ -7,146 +6,61 @@ if (typeof window === 'undefined') {
     self.addEventListener("install", () => self.skipWaiting());
     self.addEventListener("activate", (event) => event.waitUntil(self.clients.claim()));
 
-    self.addEventListener("message", (ev) => {
-        if (!ev.data) {
-            return;
-        } else if (ev.data.type === "deregister") {
-            self.registration
-                .unregister()
-                .then(() => {
-                    return self.clients.matchAll();
-                })
-                .then(clients => {
-                    clients.forEach((client) => client.navigate(client.url));
-                });
-        } else if (ev.data.type === "coepCredentialless") {
-            coepCredentialless = ev.data.value;
-        }
-    });
-
-    self.addEventListener("fetch", function (event) {
-        const r = event.request;
-        if (r.cache === "only-if-cached" && r.mode !== "same-origin") {
-            return;
-        }
-
-        const request = (coepCredentialless && r.mode === "no-cors")
-            ? new Request(r, {
-                credentials: "omit",
-            })
-            : r;
+    self.addEventListener("fetch", (event) => {
+        const { request: r } = event;
+        
+        if (r.cache === "only-if-cached" && r.mode !== "same-origin") return;
 
         event.respondWith(
-            caches.match(r).then((cached) => {
-                const fetchPromise = fetch(request)
-                    .then((response) => {
-                        if (response.status === 200 && response.type === "basic" && r.method === "GET") {
-                            const copy = response.clone();
-                            caches.open("morph-v1").then((cache) => cache.put(r, copy)).catch(() => {});
-                        }
-                        return response;
-                    })
-                    .catch((err) => cached || Promise.reject(err));
-
-                return (cached ? Promise.resolve(cached) : fetchPromise).then((response) => {
-                    if (!response || response.status === 0) {
-                        return response;
-                    }
-
+            fetch(r)
+                .then((response) => {
+                    if (!response.status || response.status > 399) return response;
+                    
                     const newHeaders = new Headers(response.headers);
-                    newHeaders.set("Cross-Origin-Embedder-Policy",
-                        coepCredentialless ? "credentialless" : "require-corp"
-                    );
-                    if (!coepCredentialless) {
-                        newHeaders.set("Cross-Origin-Resource-Policy", "cross-origin");
-                    }
                     newHeaders.set("Cross-Origin-Opener-Policy", "same-origin");
-
-                    return new Response(response.body, {
+                    newHeaders.set("Cross-Origin-Embedder-Policy", "require-corp");
+                    newHeaders.set("Cross-Origin-Resource-Policy", "cross-origin");
+                    
+                    return new Response(response.status === 204 ? null : response.body, {
                         status: response.status,
                         statusText: response.statusText,
                         headers: newHeaders,
                     });
-                });
-            })
+                })
+                .catch(async (e) => {
+                    const cached = await caches.match(r);
+                    if (cached) {
+                        const newHeaders = new Headers(cached.headers);
+                        newHeaders.set("Cross-Origin-Opener-Policy", "same-origin");
+                        newHeaders.set("Cross-Origin-Embedder-Policy", "require-corp");
+                        newHeaders.set("Cross-Origin-Resource-Policy", "cross-origin");
+                        
+                        return new Response(cached.body, {
+                            status: cached.status,
+                            statusText: cached.statusText,
+                            headers: newHeaders,
+                        });
+                    }
+                    throw e;
+                })
         );
     });
-
 } else {
     (() => {
-        const reloadedBySelf = window.sessionStorage.getItem("coiReloadedBySelf");
-        window.sessionStorage.removeItem("coiReloadedBySelf");
-        const coepDegrading = (reloadedBySelf == "coepdegrade");
-
-        const coi = {
-            shouldRegister: () => !reloadedBySelf,
-            shouldDeregister: () => false,
-            coepCredentialless: () => false,
-            coepDegrade: () => true,
-            doReload: () => window.location.reload(),
-            quiet: false,
-            ...window.coi
-        };
+        if (window.crossOriginIsolated !== false) return;
 
         const n = navigator;
-        const controlling = n.serviceWorker && n.serviceWorker.controller;
+        if (!n.serviceWorker) return;
 
-        if (controlling && !window.crossOriginIsolated) {
-            window.sessionStorage.setItem("coiCoepHasFailed", "true");
-        }
-        const coepHasFailed = window.sessionStorage.getItem("coiCoepHasFailed");
-
-        if (controlling) {
-            const reloadToDegrade = coi.coepDegrade() && !(
-                coepDegrading || window.crossOriginIsolated
-            );
-            n.serviceWorker.controller.postMessage({
-                type: "coepCredentialless",
-                value: (reloadToDegrade || coepHasFailed && coi.coepDegrade())
-                    ? false
-                    : coi.coepCredentialless(),
-            });
-            if (reloadToDegrade) {
-                !coi.quiet && console.log("Reloading page to degrade COEP.");
-                window.sessionStorage.setItem("coiReloadedBySelf", "coepdegrade");
-                coi.doReload("coepdegrade");
-            }
-
-            if (coi.shouldDeregister()) {
-                n.serviceWorker.controller.postMessage({ type: "deregister" });
-            }
-        }
-
-        if (window.crossOriginIsolated !== false || !coi.shouldRegister()) return;
-
-        if (!window.isSecureContext) {
-            !coi.quiet && console.log("COOP/COEP Service Worker not registered, a secure context is required.");
-            return;
-        }
-
-        if (!n.serviceWorker) {
-            !coi.quiet && console.error("COOP/COEP Service Worker not registered, perhaps due to private mode.");
-            return;
-        }
-
-        n.serviceWorker.register(window.document.currentScript.src).then(
+        n.serviceWorker.register(window.document.currentScript.src, { scope: '.' }).then(
             (registration) => {
-                !coi.quiet && console.log("COOP/COEP Service Worker registered", registration.scope);
-
                 registration.addEventListener("updatefound", () => {
-                    !coi.quiet && console.log("Reloading page to make use of updated COOP/COEP Service Worker.");
-                    window.sessionStorage.setItem("coiReloadedBySelf", "updatefound");
-                    coi.doReload();
+                    window.location.reload();
                 });
-
+                
                 if (registration.active && !n.serviceWorker.controller) {
-                    !coi.quiet && console.log("Reloading page to make use of COOP/COEP Service Worker.");
-                    window.sessionStorage.setItem("coiReloadedBySelf", "notcontrolling");
-                    coi.doReload();
+                    window.location.reload();
                 }
-            },
-            (err) => {
-                !coi.quiet && console.error("COOP/COEP Service Worker failed to register:", err);
             }
         );
     })();
