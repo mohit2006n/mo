@@ -103,14 +103,15 @@ function registerServiceWorker() {
   if (!("serviceWorker" in navigator)) return;
 
   if (window.crossOriginIsolated) {
-    sessionStorage.removeItem("coiReloaded");
+    sessionStorage.removeItem("coiReloadCount");
     navigator.serviceWorker.register("./sw.js").catch(() => {});
     return;
   }
 
   const reloadPage = () => {
-    if (!sessionStorage.getItem("coiReloaded")) {
-      sessionStorage.setItem("coiReloaded", "true");
+    const count = parseInt(sessionStorage.getItem("coiReloadCount") || "0", 10);
+    if (count < 2) {
+      sessionStorage.setItem("coiReloadCount", (count + 1).toString());
       window.location.reload();
     }
   };
@@ -121,29 +122,11 @@ function registerServiceWorker() {
     }
   });
 
-  navigator.serviceWorker
-    .register("./sw.js")
-    .then((registration) => {
-      if (registration.active && !navigator.serviceWorker.controller) {
-        reloadPage();
-      }
-
-      registration.addEventListener("updatefound", () => {
-        const worker = registration.installing;
-        if (worker) {
-          worker.addEventListener("statechange", () => {
-            if (worker.state === "activated" && !window.crossOriginIsolated) {
-              reloadPage();
-            }
-          });
-        }
-      });
-    })
-    .catch(() => {});
-
   if (navigator.serviceWorker.controller && !window.crossOriginIsolated) {
     reloadPage();
   }
+
+  navigator.serviceWorker.register("./sw.js").catch(() => {});
 }
 
 if (typeof window === "undefined") {
