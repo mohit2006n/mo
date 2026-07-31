@@ -27,6 +27,11 @@ import {
   maxFileBytes,
   maxTotalBytes,
   parallel,
+  storeFile,
+  readFile,
+  deleteFile,
+  clearStorage,
+  zipFiles,
 } from './index.js';
 ```
 
@@ -34,12 +39,12 @@ import {
 
 #### `transform(request, options)`
 
-Converts individual files or batch arrays of files on the client-side task queue. Maximum 2 GB per file and 4 GB total per batch.
+Converts individual files or batch arrays of files on the client-side task queue. Maximum 2 GB per file and 4 GB total per batch session.
 
 - **Arguments**:
-  - `request`: A request object `{ file, target, save }` or an array of request objects.
-  - `options`: Optional configuration object (e.g. `{ onProgress, onStart, onComplete, onError }`).
-- **Returns**: A Promise resolving to the conversion results.
+  - `request`: A request object `{ file, target, save, signal, name }` (where `file` can be a `File` or `Blob` with `name`) or an array of request objects.
+  - `options`: Optional configuration object (e.g. `{ onProgress, onStart, onComplete, onError, save, signal }`).
+- **Returns**: A Promise resolving to `{ files: [{ name, blob }] }` or stored OPFS metadata `{ files: [{ name, type, size, storedName }] }` if `save: true`.
 
 #### `inspect(file)`
 
@@ -49,9 +54,29 @@ Analyzes file metadata to determine its category kind and supported output targe
 
 #### `formats()`
 
-Retrieves all configured format groups in the system.
+Retrieves snapshots of all configured format groups in the system.
 
 - **Returns**: An array of supported format groups.
+
+#### `canUseDocuments()`
+
+Checks whether `crossOriginIsolated` and `SharedArrayBuffer` are enabled on the current page for rich ZetaOffice Wasm document suite conversion.
+
+- **Returns**: A boolean (`true` or `false`).
+
+#### Storage & Archive Utilities
+
+- `storeFile(output, key)`: Persists output files into Origin Private File System (`OPFS`) storage.
+- `readFile(file)`: Retrieves a Blob from OPFS storage given a file descriptor.
+- `deleteFile(output)`: Removes stored output files from OPFS storage.
+- `clearStorage()`: Clears all cached files from OPFS storage.
+- `zipFiles(files, archiveName)`: Bundles an array of files/Blobs into a downloadable ZIP archive.
+
+#### Environment Constants
+
+- `maxFileBytes`: Maximum accepted individual file size limit (2 GB).
+- `maxTotalBytes`: Maximum accepted total batch size limit (4 GB).
+- `parallel`: Dynamic concurrency count based on system RAM and CPU core availability.
 
 ## Supported formats
 
@@ -62,19 +87,23 @@ Morph supports a comprehensive set of file format categories locally:
   - *Outputs*: PNG, JPG, WebP, BMP, TIFF, ICO, PDF, PPTX
 - **Video & Animations**:
   - *Inputs*: MP4, WebM, MOV, MKV, AVI, WMV, FLV, M4V, F4V, MPEG, MPG, 3GP, 3G2, OGV, TS, MTS, M2TS, VOB, ASF, MXF, RM, RMVB, DIVX
-  - *Outputs*: MP4, WebM, MOV, MKV, AVI, GIF, MP3, WAV, OGG, OPUS, FLAC, AIFF, M4A, AAC, SRT, WebVTT, ASS, TXT, HTML
+  - *Outputs*: MP4, WebM, MOV, MKV, AVI, GIF, MP3, WAV, OGG, OPUS, FLAC, AIFF, M4A, AAC
 - **Audio**:
   - *Inputs*: MP3, MP2, WAV, OGG, OGA, OPUS, FLAC, M4A, M4B, AAC, CAF, VOC, WMA, AC3, EAC3, AMR, APE, AU, MKA, AIFF, AIF, RA, TTA, DSF, DFF
   - *Outputs*: MP3, WAV, OGG, OPUS, FLAC, AIFF, M4A, AAC
 - **Documents & Presentations**:
-  - *Inputs*: DOCX, DOC, DOCM, DOTX, DOTM, PPTX, PPT, PPTM, PPS, PPSX, POTX, POTM, ODT, OTT, FODT, ODP, OTP, FODP, RTF, HTML, HTM, Markdown (MD), TXT, LOG
+  - *Inputs*: DOCX, DOC, DOCM, DOTX, DOTM, PPTX, PPT, PPTM, PPS, PPSX, POTX, POTM, ODT, OTT, FODT, ODP, OTP, FODP, RTF, HTML, HTM, Markdown (MD), TXT, LOG, EPUB
   - *Outputs*: DOCX, PPTX, PDF, HTML, Markdown, TXT
 - **PDF & Ebooks**:
   - *Inputs*: PDF, EPUB, MOBI, AZW, AZW3
-  - *Outputs*: PDF, DOCX, PPTX, HTML, Markdown, TXT, PNG, JPG
+  - *Outputs*:
+    - *PDF*: TXT, DOCX, PPTX, PNG, JPG
+    - *Ebooks (MOBI/AZW/AZW3)*: HTML, TXT, PDF, DOCX, PPTX
 - **Spreadsheets, Data & Databases**:
-  - *Inputs*: XLSX, XLS, XLSM, XLSB, XLTX, XLTM, ODS, OTS, FODS, CSV, TSV, JSON, NDJSON, YAML, YML, XML, TOML, INI, DBF, DIF, SYLK, SQLite (.sqlite, .sqlite3, .db)
-  - *Outputs*: XLSX, ODS, CSV, TSV, JSON, NDJSON, YAML, XML, TOML, INI, PDF, HTML
+  - *Inputs*: XLSX, XLS, XLSM, XLSB, XLTX, XLTM, ODS, OTS, FODS, CSV, TSV, JSON, NDJSON, YAML, YML, XML, TOML, INI, DBF, DIF, SYLK (SLK), SQLite (.sqlite, .sqlite3, .db)
+  - *Outputs*:
+    - *Spreadsheets & Data*: XLSX, ODS, CSV, TSV, JSON, NDJSON, YAML, XML, TOML, INI, PDF, HTML
+    - *Databases (SQLite)*: JSON, XLSX, CSV, HTML
 - **Archives**:
   - *Inputs*: ZIP, RAR, 7Z, TAR, GZIP (GZ), TGZ
   - *Outputs*: ZIP, TAR, TGZ, GZIP (GZ)
@@ -96,7 +125,7 @@ Files are never uploaded anywhere. Processing happens directly on the device wit
 
 ## Progressive Web App & Offline Support
 
-Morph is fully installable as a Progressive Web App (PWA) on desktop and mobile browsers. Once loaded or installed, all static assets and conversion modules are cached locally via `sw.js` so you can use Morph completely offline without an internet connection.
+Morph is fully installable as a Progressive Web App (PWA) on desktop and mobile browsers. Once loaded or installed, all static assets and conversion modules are cached locally via `sw.js` and `coi-sw.js` so you can use Morph completely offline without an internet connection.
 
 ## Development and setup
 
@@ -106,7 +135,7 @@ To run with full features (including multithreaded WebAssembly for DOCX, PPTX, a
 2. Include the required headers from `serve.json`:
    - `Cross-Origin-Opener-Policy: same-origin`
    - `Cross-Origin-Embedder-Policy: require-corp`
-     _(When hosted on static services like GitHub Pages without header configuration, `sw.js` automatically attaches these headers to responses)._
+     _(When hosted on static services without custom header configuration, `coi-sw.js` automatically attaches these isolation headers to responses via Service Worker)._
 
 ## License
 

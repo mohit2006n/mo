@@ -35,10 +35,21 @@ if (typeof window === 'undefined') {
                 credentials: "omit",
             })
             : r;
+
         event.respondWith(
-            fetch(request)
-                .then((response) => {
-                    if (response.status === 0) {
+            caches.match(r).then((cached) => {
+                const fetchPromise = fetch(request)
+                    .then((response) => {
+                        if (response.status === 200 && response.type === "basic" && r.method === "GET") {
+                            const copy = response.clone();
+                            caches.open("morph-v1").then((cache) => cache.put(r, copy)).catch(() => {});
+                        }
+                        return response;
+                    })
+                    .catch((err) => cached || Promise.reject(err));
+
+                return (cached ? Promise.resolve(cached) : fetchPromise).then((response) => {
+                    if (!response || response.status === 0) {
                         return response;
                     }
 
@@ -56,10 +67,8 @@ if (typeof window === 'undefined') {
                         statusText: response.statusText,
                         headers: newHeaders,
                     });
-                })
-                .catch((e) => {
-                    return caches.match(r).then((cached) => cached || Promise.reject(e));
-                })
+                });
+            })
         );
     });
 
@@ -72,7 +81,7 @@ if (typeof window === 'undefined') {
         const coi = {
             shouldRegister: () => !reloadedBySelf,
             shouldDeregister: () => false,
-            coepCredentialless: () => true,
+            coepCredentialless: () => false,
             coepDegrade: () => true,
             doReload: () => window.location.reload(),
             quiet: false,

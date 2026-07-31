@@ -28,18 +28,22 @@ Its goals are:
 ## What it supports
 
 ### Documents & Presentations
-- **Inputs**: DOCX, DOC, DOCM, DOTX, DOTM, PPTX, PPT, PPTM, PPS, PPSX, POTX, POTM, ODT, OTT, FODT, ODP, OTP, FODP, RTF, HTML, HTM, Markdown (MD), TXT, LOG
+- **Inputs**: DOCX, DOC, DOCM, DOTX, DOTM, PPTX, PPT, PPTM, PPS, PPSX, POTX, POTM, ODT, OTT, FODT, ODP, OTP, FODP, RTF, HTML, HTM, Markdown (MD), TXT, LOG, EPUB
 - **Outputs**: DOCX, PPTX, PDF, HTML, Markdown, TXT
 Rich routes preserve fonts, colors, tables, images, layout, pages, and positioning when possible.
 
 ### PDF & Ebooks
 - **Inputs**: PDF, EPUB, MOBI, AZW, AZW3
-- **Outputs**: PDF, DOCX, PPTX, HTML, Markdown, TXT, PNG, JPG
+- **Outputs**:
+  - *PDF*: TXT, DOCX, PPTX, PNG, JPG
+  - *Ebooks (MOBI/AZW/AZW3)*: HTML, TXT, PDF, DOCX, PPTX
 Recognized text remains editable with approximate positioning, size, font, weight, and color. Complex graphics stay in a high-quality background layer.
 
 ### Spreadsheets, Data & Databases
-- **Inputs**: XLSX, XLS, XLSM, XLSB, XLTX, XLTM, ODS, OTS, FODS, CSV, TSV, JSON, NDJSON, YAML, YML, XML, TOML, INI, DBF, DIF, SYLK, SQLite (.sqlite, .sqlite3, .db)
-- **Outputs**: XLSX, ODS, CSV, TSV, JSON, NDJSON, YAML, XML, TOML, INI, PDF, HTML
+- **Inputs**: XLSX, XLS, XLSM, XLSB, XLTX, XLTM, ODS, OTS, FODS, CSV, TSV, JSON, NDJSON, YAML, YML, XML, TOML, INI, DBF, DIF, SYLK (SLK), SQLite (.sqlite, .sqlite3, .db)
+- **Outputs**:
+  - *Spreadsheets & Data*: XLSX, ODS, CSV, TSV, JSON, NDJSON, YAML, XML, TOML, INI, PDF, HTML
+  - *Databases (SQLite)*: JSON, XLSX, CSV, HTML
 XLSX and ODS conversion retains formulas, formatting, sheets, data types, and column information.
 
 ### Images & Camera RAW
@@ -48,7 +52,7 @@ XLSX and ODS conversion retains formulas, formatting, sheets, data types, and co
 
 ### Video & Animations
 - **Inputs**: MP4, WebM, MOV, MKV, AVI, WMV, FLV, M4V, F4V, MPEG, MPG, 3GP, 3G2, OGV, TS, MTS, M2TS, VOB, ASF, MXF, RM, RMVB, DIVX
-- **Outputs**: MP4, WebM, MOV, MKV, AVI, GIF, MP3, WAV, OGG, OPUS, FLAC, AIFF, M4A, AAC, SRT, WebVTT, ASS, TXT, HTML
+- **Outputs**: MP4, WebM, MOV, MKV, AVI, GIF, MP3, WAV, OGG, OPUS, FLAC, AIFF, M4A, AAC
 
 ### Audio
 - **Inputs**: MP3, MP2, WAV, OGG, OGA, OPUS, FLAC, M4A, M4B, AAC, CAF, VOC, WMA, AC3, EAC3, AMR, APE, AU, MKA, AIFF, AIF, RA, TTA, DSF, DFF
@@ -65,10 +69,10 @@ XLSX and ODS conversion retains formulas, formatting, sheets, data types, and co
 ## Project ideas
 
 - **Decoupled Architecture**: Strict isolation between UI representation and processing pipeline.
-- **Parallel Work Scheduling**: Task concurrency and memory weighting based on available system RAM and logical processors.
+- **Parallel Work Scheduling**: Task concurrency and memory weighting based on available system RAM and logical processors (`parallel`).
 - **Unified Transformation Interface**: A single polymorphic `transform()` function handling individual objects and array batches automatically.
-- **Client-Side Heavy Processing**: Utilizing WebAssembly engines (`LibreOffice`, `FFmpeg`, `PDF.js`, `SheetJS`, `libarchive`, `sql.js`) for on-device processing.
-- **Modular Domain Processing**: Dedicated converter domain handlers (`media`, `document`/`suite`, `image`, `data`, `database`, `archive`, `ebook`, `subtitle`) ensuring clear separation of format logic.
+- **Client-Side Heavy Processing**: Utilizing WebAssembly engines (`ZetaOffice/LibreOffice`, `FFmpeg`, `libarchive`, `sql.js`) and client-side JavaScript/Canvas engines (`PDF.js`, `SheetJS`, `mammoth`, `marked`, `turndown`, `js-yaml`, `smol-toml`, `docx`, `pptxgenjs`) for on-device processing.
+- **Modular Domain Processing**: Dedicated converter domain handlers (`media`, `document`/`suite`, `word`, `presentation`, `image`, `data`, `database`, `archive`, `ebook`, `subtitle`) ensuring clear separation of format logic.
   The processing code does not depend on the frontend.
 
 ## Programmatic usage
@@ -76,26 +80,49 @@ XLSX and ODS conversion retains formulas, formatting, sheets, data types, and co
 The converter can be imported directly into other JavaScript applications:
 
 ```js
-import { transform, inspect, formats } from './index.js';
-// 1. Get all supported file formats in the system
+import {
+  transform,
+  inspect,
+  formats,
+  canUseDocuments,
+  maxFileBytes,
+  maxTotalBytes,
+  parallel,
+  storeFile,
+  readFile,
+  deleteFile,
+  clearStorage,
+  zipFiles,
+} from './index.js';
+
+// 1. Get all supported file format groups
 const allFormats = formats();
-// 2. Check what formats a specific file can be converted into
+
+// 2. Check if rich Wasm document suite conversion is available
+if (canUseDocuments()) {
+  console.log('Cross-Origin Isolation is active.');
+}
+
+// 3. Inspect target outputs for a file
 const fileInfo = await inspect(file);
-// fileInfo.outputs -> ['pdf', 'html', 'txt']
-// 3. Convert a single file
+// fileInfo.outputs -> ['docx', 'pptx', 'png', 'jpg', 'txt']
+
+// 4. Convert a single file (with OPFS storage option)
 const output = await transform({
   file,
   target: 'pdf',
+  save: true,
 });
-// 4. Convert multiple files at once
+
+// 5. Convert multiple files with concurrency and progress tracking
 const outputs = await transform(
   [
     { file: fileA, target: 'pdf' },
     { file: fileB, target: 'png' },
   ],
   {
-    onProgress: (item) => {
-      // Track progress (0 to 100%)
+    onProgress: (task, progress, index) => {
+      console.log(`Item ${index} progress: ${progress}%`);
     },
   }
 );
@@ -109,6 +136,7 @@ To run with full features (including multithreaded WebAssembly for DOCX, PPTX, a
 2. Include the required headers from `serve.json`:
    - `Cross-Origin-Opener-Policy: same-origin`
    - `Cross-Origin-Embedder-Policy: require-corp`
+3. On static hosts without header customization, `coi-sw.js` registers as a Service Worker to dynamically inject `COOP` and `COEP` headers, enabling `SharedArrayBuffer` for WebAssembly multithreading.
 
 ## Do
 
@@ -132,8 +160,8 @@ To run with full features (including multithreaded WebAssembly for DOCX, PPTX, a
 
 ## Practical limits
 
-- Maximum accepted input is 2 GB per individual file and 4 GB total per conversion session based on available memory.
+- Maximum accepted input is 2 GB per individual file (`maxFileBytes`) and 4 GB total per conversion session (`maxTotalBytes`) based on available memory.
 - Large media, documents, and camera RAW files require more memory and time.
 - Scanned PDFs require OCR before their text can become editable.
 - Background tabs may be slowed by the browser.
-- Offline support is powered by `sw.js`, caching app assets and WebAssembly modules locally after initial load.
+- Offline support and COOP/COEP isolation are powered by `coi-sw.js` and `sw.js`, caching app assets and WebAssembly modules locally after initial load.
